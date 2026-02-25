@@ -1,4 +1,4 @@
-import { loadStlMetrics } from "./stl-metrics.mjs";
+import { isPointInsideMesh, loadStlGeometry } from "./stl-metrics.mjs";
 
 function round(value, digits = 6) {
   if (value === null || value === undefined || Number.isNaN(value)) {
@@ -74,11 +74,21 @@ export function runGeometry(projectConfig, options = {}) {
   }
 
   if (geometry.type === "mesh_3d") {
-    const stl = loadStlMetrics(geometry.mesh.path, {
+    const stl = loadStlGeometry(geometry.mesh.path, {
       inputUnit: geometry.mesh.input_unit,
       scaleToMm: geometry.mesh.scale_to_mm,
       watertightRequired: geometry.mesh.watertight_required,
+      pose: geometry.mesh.pose ?? null,
     });
+
+    const sourcePosition = projectConfig.source.position_mm
+      ? [
+          projectConfig.source.position_mm.x_mm,
+          projectConfig.source.position_mm.y_mm,
+          projectConfig.source.position_mm.z_mm,
+        ]
+      : [0, 0, 0];
+    const sourceInsideMesh = isPointInsideMesh(stl.triangles, sourcePosition);
 
     const apertureEquivalent = apertureEquivalentFromBbox(
       stl,
@@ -104,7 +114,8 @@ export function runGeometry(projectConfig, options = {}) {
       metrics,
       profileRows: makeProfileRows(fwhm, beamCore),
       thickness_mm: stl.mesh_bbox_z_mm,
-      stl,
+      stlGeometry: stl,
+      source_inside_mesh: sourceInsideMesh,
     };
   }
 

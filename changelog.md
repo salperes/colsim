@@ -1,3 +1,27 @@
+## [0.2.0] - 2026-02-25
+### Prompt
+- Faz-2 baslangici: mesh_3d icin ray-path tabanli boundary hesabina gecis
+
+### Added
+- `schemas/project.mesh3d.phase2.example.yaml` (mesh_3d + boundary enabled ornek)
+- `source.position_mm` sema/validator destegi
+- `core/stl-metrics.mjs` icine ray-path hesap fonksiyonlari (`computeRayPathLengthMm`)
+
+### Changed
+- `core/geometry-engine.mjs` artik `loadStlGeometry` ile ucgen geometriyi safety katmanina tasiyor
+- `core/safety-engine.mjs` boundary doz hesabinda mesh ray-path kalinligini kullaniyor
+- `scripts/release-gate.mjs` versiyonu `VERSION` dosyasindan okuyup Faz-2 orneklerini de denetliyor
+- `package.json` surumu `0.2.0` ve yeni Faz-2 komutlari eklendi
+
+### Tests
+- `node --test --test-isolation=none tests/*.test.mjs`
+- `node cli/colsim.mjs validate schemas/project.mesh3d.phase2.example.yaml`
+- `node cli/colsim.mjs run schemas/project.mesh3d.phase2.example.yaml --out out/mesh-phase2`
+- `node scripts/release-gate.mjs`
+
+### Notes
+- Bu surum Faz-2'yi baslatir; tam fiziksel kalibrasyon (Geant4 referans dogrulama) halen sonraki fazdadir.
+
 ## [0.1.0] - 2026-02-25
 ### Prompt
 - ColSim MVP iskeletini tamamla: 2D + 3D Faz-1, validate/run, test ve cikti kontrati

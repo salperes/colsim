@@ -23,3 +23,9 @@ Standart cikti kontrati:
 - `results/profile_1d.csv`
 - `results/boundary_map.csv`
 - `logs/run.log`
+
+## Faz-2 Notu
+
+- `mesh_3d` icin boundary hesabinda ray-path kalinligi kullanilir.
+- Ray, `source.position_mm` noktasindan boundary orneklerine gonderilir.
+- Yol uzunlugu STL ucgenleri uzerinde Moller-Trumbore kesisimi ile hesaplanir.

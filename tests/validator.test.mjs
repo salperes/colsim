@@ -9,6 +9,12 @@ test("parametric example validates cleanly", () => {
   assert.equal(errors.length, 0);
 });
 
+test("mesh phase2 example validates cleanly", () => {
+  const cfg = parseYamlFile("schemas/project.mesh3d.phase2.example.yaml");
+  const errors = validateProjectConfig(cfg);
+  assert.equal(errors.length, 0);
+});
+
 test("6 MeV requires conservative mode", () => {
   const cfg = parseYamlFile("schemas/project.parametric2d.example.yaml");
   cfg.project.energy.type = "MeV";

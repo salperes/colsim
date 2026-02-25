@@ -8,6 +8,7 @@ ColSim, collimator geometri degisiklikleri icin hizli metrik ve boundary safety 
 - `colsim validate` ve `colsim run`
 - 2D `parametric_2d` geometri metrikleri
 - 3D `mesh_3d` Faz-1 (STL import, watertight kontrolu, bbox/volume)
+- 3D `mesh_3d` Faz-2 baslangici (ray-path tabanli boundary doz)
 - safety hesap zinciri:
   - enerji binleme
   - attenuation (`data/xcom_cache/`)
@@ -23,9 +24,11 @@ ColSim, collimator geometri degisiklikleri icin hizli metrik ve boundary safety 
 ```powershell
 node cli/colsim.mjs validate schemas/project.parametric2d.example.yaml
 node cli/colsim.mjs validate schemas/project.mesh3d.example.yaml
+node cli/colsim.mjs validate schemas/project.mesh3d.phase2.example.yaml
 
 node cli/colsim.mjs run schemas/project.parametric2d.example.yaml --out out/parametric
 node cli/colsim.mjs run schemas/project.mesh3d.example.yaml --out out/mesh
+node cli/colsim.mjs run schemas/project.mesh3d.phase2.example.yaml --out out/mesh-phase2
 ```
 
 ## Test

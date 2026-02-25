@@ -1,14 +1,15 @@
 {
   "name": "colsim",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
   "description": "ColSim MVP: CLI-based collimator geometry and safety simulator",
   "scripts": {
-    "validate:yaml": "node tools/yaml-validate.mjs schemas/project.schema.yaml schemas/project.parametric2d.example.yaml schemas/project.mesh3d.example.yaml",
-    "validate:project": "node cli/colsim.mjs validate schemas/project.parametric2d.example.yaml && node cli/colsim.mjs validate schemas/project.mesh3d.example.yaml",
+    "validate:yaml": "node tools/yaml-validate.mjs schemas/project.schema.yaml schemas/project.parametric2d.example.yaml schemas/project.mesh3d.example.yaml schemas/project.mesh3d.phase2.example.yaml",
+    "validate:project": "node cli/colsim.mjs validate schemas/project.parametric2d.example.yaml && node cli/colsim.mjs validate schemas/project.mesh3d.example.yaml && node cli/colsim.mjs validate schemas/project.mesh3d.phase2.example.yaml",
     "run:parametric": "node cli/colsim.mjs run schemas/project.parametric2d.example.yaml --out out/parametric",
     "run:mesh": "node cli/colsim.mjs run schemas/project.mesh3d.example.yaml --out out/mesh",
+    "run:mesh:phase2": "node cli/colsim.mjs run schemas/project.mesh3d.phase2.example.yaml --out out/mesh-phase2",
     "test": "node --test --test-isolation=none tests/*.test.mjs",
     "release:gate": "node scripts/release-gate.mjs"
   }

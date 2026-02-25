@@ -1,5 +1,6 @@
 import { getBuildupFactor, getMuRhoCm2PerG } from "./material-db.mjs";
 import { buildEnergySpectrum } from "./spectrum-engine.mjs";
+import { computeRayPathLengthMm } from "./stl-metrics.mjs";
 
 function round(value, digits = 6) {
   if (value === null || value === undefined || Number.isNaN(value)) {
@@ -9,18 +10,35 @@ function round(value, digits = 6) {
   return Math.round(value * p) / p;
 }
 
+function vecNorm(v) {
+  return Math.sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]);
+}
+
 function toAngleDegrees(x, y) {
   const deg = (Math.atan2(y, x) * 180) / Math.PI;
   return deg >= 0 ? deg : 360 + deg;
 }
 
+function getSourcePositionMm(source) {
+  if (source.position_mm) {
+    return [
+      source.position_mm.x_mm,
+      source.position_mm.y_mm,
+      source.position_mm.z_mm,
+    ];
+  }
+  return [0, 0, 0];
+}
+
 function buildBoundarySamples(boundary) {
   if (boundary.type === "ring") {
     const rows = [];
+    const z = boundary.z_m ?? 0;
     for (let angle = 0; angle < 360; angle += 10) {
+      const rad = (angle * Math.PI) / 180;
       rows.push({
         angle_deg: angle,
-        radius_m: boundary.radius_m,
+        point_m: [boundary.radius_m * Math.cos(rad), boundary.radius_m * Math.sin(rad), z],
       });
     }
     return rows;
@@ -32,11 +50,11 @@ function buildBoundarySamples(boundary) {
 
   return boundary.points_m.map((point) => ({
     angle_deg: toAngleDegrees(point.x, point.y),
-    radius_m: Math.sqrt(point.x * point.x + point.y * point.y + point.z * point.z),
+    point_m: [point.x, point.y, point.z],
   }));
 }
 
-function computeInstantDoseForRadius(input) {
+function computeInstantDoseForRay(input) {
   const {
     radius_m,
     density_g_cm3,
@@ -49,7 +67,7 @@ function computeInstantDoseForRadius(input) {
   } = input;
 
   const radius = Math.max(0.01, radius_m);
-  // Leakage path is typically a small fraction of bulk thickness in analytic MVP mode.
+  // Effective leakage path scaling for analytical MVP regime.
   const x_cm = (Math.max(0.001, thickness_mm) / 10.0) * 0.02;
   const geometric = 1 / (radius * radius);
 
@@ -87,6 +105,7 @@ export function runSafety(projectConfig, geometryResult) {
     };
   }
 
+  const sourcePosMm = getSourcePositionMm(projectConfig.source);
   const spectrum = buildEnergySpectrum(projectConfig.project.energy);
   const dutyFactor =
     (safety.duty_cycle.beam_on_s * safety.duty_cycle.scans_per_hour) / 3600.0;
@@ -95,19 +114,45 @@ export function runSafety(projectConfig, geometryResult) {
     ? safety.conservative_factor ?? 1
     : 1;
   const sourceFactor = Math.max(0.2, projectConfig.source.diameter_mm / 4.0);
-  const thicknessMm = Math.max(0.01, geometryResult.thickness_mm ?? 1);
-
+  const fallbackThicknessMm = Math.max(0.01, geometryResult.thickness_mm ?? 1);
   const samples = buildBoundarySamples(safety.boundary);
+
   const rows = [];
   let maxInst = 0;
   let maxAvg = 0;
 
   for (const sample of samples) {
+    const pointMm = [
+      sample.point_m[0] * 1000,
+      sample.point_m[1] * 1000,
+      sample.point_m[2] * 1000,
+    ];
+    const rayVec = [
+      pointMm[0] - sourcePosMm[0],
+      pointMm[1] - sourcePosMm[1],
+      pointMm[2] - sourcePosMm[2],
+    ];
+    const rayDistanceMm = Math.max(1e-3, vecNorm(rayVec));
+    const radiusM = rayDistanceMm / 1000;
+
+    let thicknessMm = fallbackThicknessMm;
+    if (geometryResult.stlGeometry?.triangles) {
+      thicknessMm = computeRayPathLengthMm(
+        geometryResult.stlGeometry.triangles,
+        sourcePosMm,
+        rayVec,
+        {
+          maxDistanceMm: rayDistanceMm,
+          originInside: geometryResult.source_inside_mesh,
+        },
+      );
+    }
+
     const angleRad = (sample.angle_deg * Math.PI) / 180;
     const directional = Math.max(0.2, 1 + 0.06 * Math.sin(3 * angleRad));
     const inst =
-      computeInstantDoseForRadius({
-        radius_m: sample.radius_m,
+      computeInstantDoseForRay({
+        radius_m: radiusM,
         density_g_cm3: safety.density_g_cm3,
         thickness_mm: thicknessMm,
         material: safety.material,
@@ -119,6 +164,7 @@ export function runSafety(projectConfig, geometryResult) {
     const avg = inst * dutyFactor;
     if (inst > maxInst) maxInst = inst;
     if (avg > maxAvg) maxAvg = avg;
+
     rows.push({
       angle_deg: round(sample.angle_deg, 3),
       dose_uSv_h_inst: round(inst),

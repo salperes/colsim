@@ -146,6 +146,9 @@ Teslim kapisi:
 6. `mesh_3d` varsayilan birimini `mm` yerine baska birime cekmek (geriye uyumsuz):
 - `0.5.0 -> 1.0.0` (MAJOR)
 
+7. `mesh_3d` Faz-2 baslangici olarak ray-path boundary hesabini eklemek (geriye uyumlu):
+- `0.1.0 -> 0.2.0` (MINOR)
+
 ## 8. ColSim'e Ozel Notlar
 
 - 6 MeV conservative mode davranisi guvenlik kritik kabul edilir; bu alandaki davranis degisikligi en az MINOR, geriye uyumsuzsa MAJOR olmalidir.

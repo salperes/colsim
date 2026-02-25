@@ -12,6 +12,14 @@ function nowIsoCompact() {
   return new Date().toISOString().replace(/[:.]/g, "-");
 }
 
+function readVersion() {
+  const version = fs.readFileSync(path.resolve("VERSION"), "utf8").trim();
+  if (!version) {
+    throw new Error("VERSION file is empty");
+  }
+  return version;
+}
+
 function runCheck(label, fn) {
   const startedAt = new Date().toISOString();
   try {
@@ -40,13 +48,16 @@ function checkYamlParse() {
   parseYamlFile("schemas/project.schema.yaml");
   parseYamlFile("schemas/project.parametric2d.example.yaml");
   parseYamlFile("schemas/project.mesh3d.example.yaml");
+  parseYamlFile("schemas/project.mesh3d.phase2.example.yaml");
 }
 
 function checkValidator() {
   const parametric = parseYamlFile("schemas/project.parametric2d.example.yaml");
   const mesh = parseYamlFile("schemas/project.mesh3d.example.yaml");
+  const meshPhase2 = parseYamlFile("schemas/project.mesh3d.phase2.example.yaml");
   assert.equal(validateProjectConfig(parametric).length, 0);
   assert.equal(validateProjectConfig(mesh).length, 0);
+  assert.equal(validateProjectConfig(meshPhase2).length, 0);
 
   parametric.project.energy.type = "MeV";
   parametric.project.energy.value = 6;
@@ -77,13 +88,16 @@ function checkStl() {
 function checkCliValidate() {
   const a = colsimMain(["node", "cli/colsim.mjs", "validate", "schemas/project.parametric2d.example.yaml"]);
   const b = colsimMain(["node", "cli/colsim.mjs", "validate", "schemas/project.mesh3d.example.yaml"]);
+  const c = colsimMain(["node", "cli/colsim.mjs", "validate", "schemas/project.mesh3d.phase2.example.yaml"]);
   assert.equal(a, 0);
   assert.equal(b, 0);
+  assert.equal(c, 0);
 }
 
 function checkCliRun() {
   fs.rmSync(path.resolve("out/release-parametric"), { recursive: true, force: true });
   fs.rmSync(path.resolve("out/release-mesh"), { recursive: true, force: true });
+  fs.rmSync(path.resolve("out/release-mesh-phase2"), { recursive: true, force: true });
 
   const a = colsimMain([
     "node",
@@ -101,8 +115,17 @@ function checkCliRun() {
     "--out",
     "out/release-mesh",
   ]);
+  const c = colsimMain([
+    "node",
+    "cli/colsim.mjs",
+    "run",
+    "schemas/project.mesh3d.phase2.example.yaml",
+    "--out",
+    "out/release-mesh-phase2",
+  ]);
   assert.equal(a, 0);
   assert.equal(b, 0);
+  assert.equal(c, 0);
 
   const required = [
     "out/release-parametric/results/metrics.csv",
@@ -113,16 +136,20 @@ function checkCliRun() {
     "out/release-mesh/results/profile_1d.csv",
     "out/release-mesh/results/boundary_map.csv",
     "out/release-mesh/logs/run.log",
+    "out/release-mesh-phase2/results/metrics.csv",
+    "out/release-mesh-phase2/results/profile_1d.csv",
+    "out/release-mesh-phase2/results/boundary_map.csv",
+    "out/release-mesh-phase2/logs/run.log",
   ];
   for (const f of required) {
     assert.equal(fs.existsSync(path.resolve(f)), true, `missing output: ${f}`);
   }
 }
 
-function writeReport(payload) {
+function writeReport(version, payload) {
   const reportsDir = path.resolve("reports");
   fs.mkdirSync(reportsDir, { recursive: true });
-  const named = path.join(reportsDir, `release-gate-v0.1.0-${nowIsoCompact()}.json`);
+  const named = path.join(reportsDir, `release-gate-v${version}-${nowIsoCompact()}.json`);
   const latest = path.join(reportsDir, "release-gate-latest.json");
   fs.writeFileSync(named, `${JSON.stringify(payload, null, 2)}\n`, "utf8");
   fs.writeFileSync(latest, `${JSON.stringify(payload, null, 2)}\n`, "utf8");
@@ -130,6 +157,7 @@ function writeReport(payload) {
 }
 
 function main() {
+  const version = readVersion();
   const checks = [
     { label: "YAML parser smoke validation", fn: checkYamlParse },
     { label: "Project validator rules", fn: checkValidator },
@@ -155,12 +183,12 @@ function main() {
   }
 
   const payload = {
-    version: "0.1.0",
+    version,
     status: ok ? "pass" : "fail",
     generated_at: new Date().toISOString(),
     results,
   };
-  const report = writeReport(payload);
+  const report = writeReport(version, payload);
   console.log(`Report: ${report}`);
   if (!ok) {
     process.exit(1);

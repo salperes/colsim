@@ -1,6 +1,6 @@
 # SRS - ColSim (Collimator Simulator)
 
-- Surum: 0.1.0
+- Surum: 0.2.0
 - Tarih: 2026-02-25
 - Kaynaklar: `eng_guide.md`, `New Metin Belgesi.txt`
 
@@ -21,7 +21,7 @@ Sistem iki temel kullanim alanini kapsar:
 
 - Pencil-beam (backscatter, 225-320 kV)
 - Fan-beam (LINAC, 4/6 MeV)
-- 3D kolimator tasarimi (mesh tabanli, Faz-1: import + validasyon + temel metrikler)
+- 3D kolimator tasarimi (mesh tabanli, Faz-1 metrik + Faz-2 baslangic boundary analizi)
 
 MVP kapsami disi:
 
@@ -123,7 +123,7 @@ Mimari bilesenler:
 - FR-024: `boundary_map.csv` en az `angle_deg, dose_uSv_h_inst, dose_uSv_h_avg` kolonlarini icermelidir.
 - FR-025: Boundary temsilinde ring grid veya nokta listesi desteklenmelidir.
 
-### 5.7 3D Kolimator Tasarimi (Faz-1 Extension)
+### 5.7 3D Kolimator Tasarimi (Faz-1/Faz-2 Extension)
 
 - FR-026: Sistem `geometry.type` alaninda `parametric_2d` ve `mesh_3d` degerlerini desteklemelidir.
 - FR-027: `mesh_3d` tipinde en az `STL` importu desteklenmeli; dosya yolu `geometry.mesh.path` ile verilmelidir.
@@ -139,6 +139,8 @@ Mimari bilesenler:
   - `mesh_volume_mm3`
   - `aperture_equivalent_mm`
 - FR-031: `mesh_3d` Faz-1 kosumunda safety/boundary hesabi devre disiysa `results/boundary_map.csv` dosyasi yalnizca kolon basliklariyla uretilmeli ve `logs/run.log` icine `phase1_geometry_only=true` kaydi yazilmalidir.
+- FR-032: `mesh_3d` Faz-2 kosumunda boundary hesabi ray-path tabanli efektif yol uzunlugunu kullanmalidir (kaynak konumu -> boundary noktasi dogrultusunda mesh kesisimi).
+- FR-033: `source.position_mm` opsiyonel alani verildiginde ray-path hesabi bu konumu kullanmali, verilmediginde kaynak `(0,0,0)` kabul edilmelidir.
 
 ## 6. Is Kurallari ve Limitler
 
@@ -185,7 +187,7 @@ Beklenen trendler (tolerans: +/-3%):
 Asagidaki maddeler MVP disidir:
 
 - Geant4 headless dogrulama
-- Mesh tabanli 3D kolimatorlar icin tam safety/boundary cozumlemesi (Faz-2)
+- Mesh tabanli 3D kolimatorlar icin tam fiziksel kalibrasyon (Geant4 referansli Faz-2 dogrulama)
 - Surface source integration
 - Skyshine modulu
 - Multi-boundary polygon destegi
