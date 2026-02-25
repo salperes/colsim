@@ -1,0 +1,314 @@
+$schema: "https://json-schema.org/draft/2020-12/schema"
+$id: "https://colsim.local/schemas/project.schema.yaml"
+title: "ColSim Project Schema"
+type: object
+additionalProperties: false
+required:
+  - project
+  - source
+  - geometry
+  - safety
+properties:
+  project:
+    type: object
+    additionalProperties: false
+    required:
+      - name
+      - mode
+      - energy
+    properties:
+      name:
+        type: string
+        minLength: 1
+      mode:
+        type: string
+        enum:
+          - pencil_beam
+          - fan_beam
+      energy:
+        type: object
+        additionalProperties: false
+        required:
+          - type
+          - value
+        properties:
+          type:
+            type: string
+            enum:
+              - kV
+              - MeV
+          value:
+            type: number
+            exclusiveMinimum: 0
+
+  source:
+    type: object
+    additionalProperties: false
+    required:
+      - diameter_mm
+      - spectrum
+    properties:
+      diameter_mm:
+        type: number
+        exclusiveMinimum: 0
+      spectrum:
+        type: string
+        minLength: 1
+
+  geometry:
+    oneOf:
+      - $ref: "#/$defs/geometry_parametric_2d"
+      - $ref: "#/$defs/geometry_mesh_3d"
+
+  safety:
+    type: object
+    additionalProperties: false
+    required:
+      - material
+      - density_g_cm3
+      - duty_cycle
+      - boundary
+      - limits
+      - conservative_mode
+      - enable_boundary
+    properties:
+      material:
+        type: string
+        minLength: 1
+      density_g_cm3:
+        type: number
+        exclusiveMinimum: 0
+      duty_cycle:
+        type: object
+        additionalProperties: false
+        required:
+          - beam_on_s
+          - scans_per_hour
+        properties:
+          beam_on_s:
+            type: number
+            exclusiveMinimum: 0
+          scans_per_hour:
+            type: number
+            minimum: 0
+      boundary:
+        type: object
+        additionalProperties: false
+        required:
+          - type
+        properties:
+          type:
+            type: string
+            enum:
+              - ring
+              - points
+          radius_m:
+            type: number
+            exclusiveMinimum: 0
+          points_m:
+            type: array
+            minItems: 1
+            items:
+              type: object
+              additionalProperties: false
+              required:
+                - x
+                - y
+                - z
+              properties:
+                x:
+                  type: number
+                y:
+                  type: number
+                z:
+                  type: number
+        allOf:
+          - if:
+              properties:
+                type:
+                  const: ring
+              required:
+                - type
+            then:
+              required:
+                - radius_m
+          - if:
+              properties:
+                type:
+                  const: points
+              required:
+                - type
+            then:
+              required:
+                - points_m
+      limits:
+        type: object
+        additionalProperties: false
+        required:
+          - boundary_uSv_per_h
+          - operator_uSv_per_h
+        properties:
+          boundary_uSv_per_h:
+            type: number
+            exclusiveMinimum: 0
+          operator_uSv_per_h:
+            type: number
+            exclusiveMinimum: 0
+      conservative_mode:
+        type: boolean
+      conservative_factor:
+        type: number
+        exclusiveMinimum: 0
+      leakage_fraction:
+        type: number
+        minimum: 0
+        maximum: 1
+      enable_boundary:
+        type: boolean
+
+  runtime:
+    type: object
+    additionalProperties: false
+    properties:
+      phase1_geometry_only:
+        type: boolean
+
+allOf:
+  - if:
+      properties:
+        project:
+          properties:
+            energy:
+              properties:
+                type:
+                  const: MeV
+                value:
+                  const: 6
+              required:
+                - type
+                - value
+          required:
+            - energy
+      required:
+        - project
+    then:
+      properties:
+        safety:
+          properties:
+            conservative_mode:
+              const: true
+          required:
+            - conservative_mode
+  - if:
+      properties:
+        runtime:
+          properties:
+            phase1_geometry_only:
+              const: true
+          required:
+            - phase1_geometry_only
+      required:
+        - runtime
+    then:
+      properties:
+        safety:
+          properties:
+            enable_boundary:
+              const: false
+          required:
+            - enable_boundary
+
+$defs:
+  geometry_parametric_2d:
+    type: object
+    additionalProperties: false
+    required:
+      - type
+      - slit_mm
+      - inner_diameter_mm
+      - outer_diameter_mm
+      - thickness_mm
+      - sdd_mm
+    properties:
+      type:
+        const: parametric_2d
+      slit_mm:
+        type: number
+        exclusiveMinimum: 0
+      inner_diameter_mm:
+        type: number
+        exclusiveMinimum: 0
+      outer_diameter_mm:
+        type: number
+        exclusiveMinimum: 0
+      thickness_mm:
+        type: number
+        exclusiveMinimum: 0
+      sdd_mm:
+        type: number
+        exclusiveMinimum: 0
+
+  geometry_mesh_3d:
+    type: object
+    additionalProperties: false
+    required:
+      - type
+      - sdd_mm
+      - mesh
+      - aperture_equivalent_method
+    properties:
+      type:
+        const: mesh_3d
+      sdd_mm:
+        type: number
+        exclusiveMinimum: 0
+      aperture_equivalent_method:
+        type: string
+        enum:
+          - projected_area
+          - minimum_clearance
+      mesh:
+        type: object
+        additionalProperties: false
+        required:
+          - path
+          - format
+          - input_unit
+          - scale_to_mm
+          - watertight_required
+        properties:
+          path:
+            type: string
+            minLength: 1
+          format:
+            type: string
+            enum:
+              - stl
+          input_unit:
+            type: string
+            enum:
+              - mm
+              - cm
+              - m
+              - inch
+          scale_to_mm:
+            type: number
+            exclusiveMinimum: 0
+          watertight_required:
+            const: true
+          pose:
+            type: object
+            additionalProperties: false
+            properties:
+              tx_mm:
+                type: number
+              ty_mm:
+                type: number
+              tz_mm:
+                type: number
+              rx_deg:
+                type: number
+              ry_deg:
+                type: number
+              rz_deg:
+                type: number

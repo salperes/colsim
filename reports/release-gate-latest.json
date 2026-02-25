@@ -1,0 +1,47 @@
+{
+  "version": "0.1.0",
+  "status": "pass",
+  "generated_at": "2026-02-25T18:56:42.713Z",
+  "results": [
+    {
+      "step": "YAML parser smoke validation",
+      "code": 0,
+      "started_at": "2026-02-25T18:56:42.696Z",
+      "ended_at": "2026-02-25T18:56:42.699Z",
+      "stdout": "PASS",
+      "stderr": ""
+    },
+    {
+      "step": "Project validator rules",
+      "code": 0,
+      "started_at": "2026-02-25T18:56:42.699Z",
+      "ended_at": "2026-02-25T18:56:42.700Z",
+      "stdout": "PASS",
+      "stderr": ""
+    },
+    {
+      "step": "STL metrics and watertight validation",
+      "code": 0,
+      "started_at": "2026-02-25T18:56:42.700Z",
+      "ended_at": "2026-02-25T18:56:42.702Z",
+      "stdout": "PASS",
+      "stderr": ""
+    },
+    {
+      "step": "CLI validate",
+      "code": 0,
+      "started_at": "2026-02-25T18:56:42.702Z",
+      "ended_at": "2026-02-25T18:56:42.703Z",
+      "stdout": "PASS",
+      "stderr": ""
+    },
+    {
+      "step": "CLI run and output contract",
+      "code": 0,
+      "started_at": "2026-02-25T18:56:42.703Z",
+      "ended_at": "2026-02-25T18:56:42.712Z",
+      "stdout": "PASS",
+      "stderr": ""
+    }
+  ]
+}

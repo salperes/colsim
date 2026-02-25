@@ -1,0 +1,22 @@
+{
+  "version": "0.1.0",
+  "status": "fail",
+  "generated_at": "2026-02-25T18:55:49.166Z",
+  "results": [
+    {
+      "command": "C:\\Program Files\\nodejs\\node.exe tools/yaml-validate.mjs schemas/project.schema.yaml schemas/project.parametric2d.example.yaml schemas/project.mesh3d.example.yaml",
+      "args": [
+        "tools/yaml-validate.mjs",
+        "schemas/project.schema.yaml",
+        "schemas/project.parametric2d.example.yaml",
+        "schemas/project.mesh3d.example.yaml"
+      ],
+      "code": 1,
+      "stdout": "",
+      "stderr": "",
+      "started_at": "2026-02-25T18:55:49.164Z",
+      "ended_at": "2026-02-25T18:55:49.166Z",
+      "step": "YAML parser smoke validation"
+    }
+  ]
+}

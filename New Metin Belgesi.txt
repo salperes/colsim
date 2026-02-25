@@ -1,0 +1,206 @@
+1) Hedef ve kapsam (Codex’in asla şaşmaması gereken çerçeve)
+
+Proje adı: colsim (Collimator Simulator)
+Ana hedef:
+
+Backscatter pencil-beam kolimatör (slit/disk) ve LINAC fan-beam kolimatör (jaw) için:
+
+hızlı analitik metrikler: beam width, penumbra, FWHM
+
+hızlı güvenlik katmanı: leakage → dış doz → boundary (2.5 µSv/h) (point-kernel + attenuation + buildup)
+
+batch koşum ve sonuçların GUI’de gösterimi
+
+Kapsam dışı (MVP):
+
+Tam skyshine ve tam MC (Geant4) doğrulama: Phase-2
+
+Malzeme ayrımı/kontrabant sınıflandırma gibi AI işler: yok
+
+2) Codex çalışma modu: “GUI odaklı, arka planda batch”
+
+Codex’in geliştireceği mimari şudur:
+
+GUI → project.yaml üretir
+
+colsim run ... komutu → headless motoru çalıştırır
+
+results/ altına standardize çıktılar yazar
+
+GUI sadece çıktıyı okur ve plot/tablolaştırır
+
+Bu model Codex’in uzun görevlerde repo içinde dosya/komut/test akışıyla ilerlemesine uygun.
+
+3) Repo kuralları (Codex’e net “kontrat”)
+3.1. Klasör yapısı (zorunlu)
+colsim/
+  app/                 # GUI (PyQt6)
+  core/                # motorlar: geometry + safety
+  data/
+    xcom_cache/        # NIST XCOM'dan türetilen µ/ρ cache (offline dosya)
+    buildup_gp/        # GP param tabloları (materyal/enerji grid)
+  cli/                 # colsim run / validate komutları
+  schemas/             # project.yaml şeması (JSONSchema/YAML schema)
+  tests/               # unit + golden tests
+  docs/                # kullanıcı (mühendis) dokümanı
+3.2. Çıktı kontratı (zorunlu)
+
+Her koşumda:
+
+results/metrics.csv (tek satır summary + meta)
+
+results/profile_1d.csv (x, value)
+
+results/boundary_map.csv (angle/radius grid ya da nokta listesi)
+
+logs/run.log
+
+3.3. “Done” kriterleri
+
+Codex bir işi bitirdi sayılmaz, şu 3’ü sağlamadan PR çıkaramaz:
+
+pytest yeşil
+
+docs/ altında ilgili sayfa güncel
+
+“golden test” (senin örnek kolimatör senaryon) aynı sonucu veriyor (tolerans tanımlı)
+
+4) Hesap motoru yönergesi (hızlı ama kullanılabilir)
+4.1. Geometry (pencil-beam)
+
+Girdiler: slit, source_diameter, mesafeler, disk iç/dış çap, kalınlık
+
+Çıktılar:
+
+footprint
+
+penumbra (10–90 veya 20–80 seçilebilir)
+
+FWHM (kabul edilen profil varsayımıyla)
+
+Burada buildup kullanma. Sadece geometri.
+
+4.2. Safety (leakage + boundary)
+
+Girdiler:
+
+duty_cycle: beam_on_s, scans_per_hour
+
+boundary: ring radius(lar) veya nokta seti
+
+material: W/Pb/steel vs
+
+µ(E): XCOM cache
+
+buildup: GP param (enerji+kalınlık/mfp)
+
+Model:
+
+point-kernel: 
+1
+/
+𝑟
+2
+1/r
+2
+ + 
+𝑒
+−
+𝜇
+𝑥
+e
+−μx
+ + 
+𝐵
+(
+𝐸
+,
+𝑥
+)
+B(E,x)
+
+enerji binleme (log bins)
+
+Çıktılar:
+
+instant dose rate map
+
+hourly average dose rate map
+
+max boundary value + PASS/FAIL (2.5 µSv/h)
+
+6 MeV için “konservatif mod” zorunlu: leakage fraction veya güvenlik çarpanı config’ten yönetilecek.
+
+5) Codex görev yürütme standardı (her görevde uygulanacak)
+5.1. Plan → Uygula → Kanıtla döngüsü
+
+Codex her task’te:
+
+PLAN.md içine 10–20 satırlık plan yazar (değişecek dosyalar + test planı)
+
+Uygular
+
+Kanıtlar: test çıktısı + örnek run log snippet
+
+5.2. Küçük PR kuralı
+
+Tek PR = tek konu (ör: sadece boundary map)
+
+Büyük refactor ancak “hazır test” varken
+
+5.3. Hata politkası
+
+Sessizce varsayım yapma.
+
+Varsayım gerekiyorsa project.yaml içinde açık parametre yap.
+
+6) Skill olarak paketleme (Codex’e “kurumsal talimat”)
+
+Codex skills yapısı için repoya şu klasörü koy:
+
+skills/colsim-engineering/SKILL.md
+skills/colsim-engineering/resources/...
+skills/colsim-engineering/scripts/...
+
+Skill kavramı ve SKILL.md manifest yaklaşımı Codex dokümantasyonunda tarif ediliyor.
+
+6.1. Örnek SKILL.md (kopyala-yapıştır)
+---
+name: colsim-engineering
+description: ColSim (collimator simulator) için mühendis odaklı geliştirme yönergesi: GUI+batch, geometry + safety (leakage/boundary) motoru, test ve çıktı kontratı.
+version: 0.1.0
+---
+
+# Primary goal
+- Pencil-beam ve fan-beam kolimatör analizi: geometry metrikleri + safety (leakage → boundary dose).
+
+# Non-goals (MVP)
+- Full Geant4 doğrulama, skyshine, kompleks materyal sınıflandırma.
+
+# Repo rules
+- Çıktı kontratı: results/metrics.csv, profile_1d.csv, boundary_map.csv, logs/run.log
+- Her değişiklik: pytest + docs güncelle + golden test.
+
+# Engineering workflow
+1) PLAN.md güncelle
+2) küçük PR
+3) test kanıtı ekle
+
+# Safety model notes
+- Safety modunda point-kernel + attenuation + GP buildup.
+- 6 MeV: conservative factor zorunlu (config’ten).
+
+# Deliverables
+- CLI: `colsim run project.yaml`
+- GUI: PyQt6, sadece proje oluşturur ve sonuç gösterir.
+7) Codex’e verilecek “başlangıç prompt” (ilk görev)
+
+Codex’e şunu görev olarak ver:
+
+“project.yaml şemasını (schemas/) oluştur”
+
+“colsim run CLI iskeletini yaz”
+
+“Geometry motoru (pencil-beam) için metrikleri üret ve results/metrics.csv formatına dök”
+
+“Golden test: (senin disk kolimatör senaryonu) tests/test_golden_pencilbeam.py olarak ekle”
